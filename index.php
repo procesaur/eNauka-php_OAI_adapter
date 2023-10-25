@@ -34,6 +34,9 @@ if(curl_errno($ch))
 curl_close ($ch); 
 
 
+$result = preg_replace ('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $result);
+
+
 $xml = simplexml_load_string($result, NULL, NULL, "http://www.openarchives.org/OAI/2.0/");
 
 if ($verb=="GetRecord" || $verb="ListRecords"){
