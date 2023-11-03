@@ -35,9 +35,25 @@ curl_close ($ch);
 
 
 $result = preg_replace ('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $result);
-
-
 $xml = simplexml_load_string($result, NULL, NULL, "http://www.openarchives.org/OAI/2.0/");
+
+if (!function_exists('trans'))   {
+	function trans($x){
+		$cyr = array('а','б','в','г','д','ђ','е','ж','з','и','ј','к','л','љ','м','н','њ','о','п','р','с','т','ћ','у','ф','х','ц','ч','џ','ш','А','Б','В','Г','Д','Ђ','Е','Ж','З','И','Ј','К','Л','Љ','М','Н','Њ','О','П','Р','С','Т','Ћ','У','Ф','Х','Ц','Ч','Џ','Ш');
+		$lat = array('a','b','v','g','d','đ','e','ž','z','i','j','k','l','lj','m','n','nj','o','p','r','s','t','ć','u','f','h','c','č','dž','š','A','B','V','G','D','Đ','E','Ž','Z','I','J','K','L','Lj','M','N','Nj','O','P','R','S','T','Ć','U','F','H','C','Č','Dž','Š');
+		return  str_replace($cyr, $lat, $x);
+	}
+}
+if (!function_exists('iscyr'))   {
+	function iscyr($x){
+		$cyr = array('а','б','в','г','д','ђ','е','ж','з','и','ј','к','л','љ','м','н','њ','о','п','р','с','т','ћ','у','ф','х','ц','ч','џ','ш','А','Б','В','Г','Д','Ђ','Е','Ж','З','И','Ј','К','Л','Љ','М','Н','Њ','О','П','Р','С','Т','Ћ','У','Ф','Х','Ц','Ч','Џ','Ш');
+		foreach ($cyr as $c){
+			if (strpos($x, $c)){ return true; }
+		}
+		return false;
+	}
+}
+
 
 if ($verb=="GetRecord" || $verb="ListRecords"){
 
@@ -126,19 +142,26 @@ if ($verb=="GetRecord" || $verb="ListRecords"){
 		}
 
 		$creators = $oai->xpath('dc:creator');
+		$title = $oai->xpath('dc:title');
 		if (count($creators) == 1){
 			split($oai_key, "creator");
 		}
 		else{
-			$creators = $oai->xpath('//dc:creator[@href]');	
+			unset($creators[0][0]);
+			$creators = $oai->xpath('//dc:creator[@href]');
+			$i=0;
 			foreach ($creators as $creator){
 				$orcid = get_orcid(explode("set/",$creator["href"])[1]);
 				$creator[0] = rtrim($creator);
+				if (!iscyr($title[0])){
+					$creator[0] = trans($creator[0]);
+				}
+				
 				if ($orcid != ""){
 					$creator[0]["id"]=$orcid;
-				}
+				}	
 				unset($creator[0]["href"]);
-			}
+			}		
 		}
 	}
 }
